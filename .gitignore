@@ -1,3 +1,4 @@
+.*
 tt.*
 .tests
 doc/tags
@@ -7,6 +8,5 @@ foo.*
 *.log
 data
 
-.neoconf.json
 lazy-lock.json
 lazyvim.json

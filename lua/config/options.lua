@@ -75,4 +75,4 @@ vim.opt.listchars = {
 
 -- Performance
 vim.opt.lazyredraw = false
-vim.opt.synmaxcol = 240
+vim.opt.synmaxcol = 220
