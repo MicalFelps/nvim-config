@@ -19,7 +19,6 @@ return {
     end,
   },
 
-  -- clangd LSP override
   {
     "neovim/nvim-lspconfig",
     opts = {
@@ -31,7 +30,6 @@ return {
             "--clang-tidy",
             "--header-insertion=iwyu",
             "--completion-style=detailed",
-            "--function-arg-placeholders",
             "--cross-file-rename",
             "--fallback-style=llvm",
             -- "--compile-commands-dir=build", -- uncomment if fixed build folder
@@ -40,11 +38,6 @@ return {
             { "<leader>ch", "<cmd>ClangdSwitchSourceHeader<CR>", desc = "Switch Source/Header" },
             { "<leader>cH", "<cmd>ClangdTypeHierarchy<CR>", desc = "Type Hierarchy" },
             { "<leader>ct", "<cmd>ClangdSymbolInfo<CR>", desc = "Symbol Info" },
-          },
-          init_options = {
-            clangdFileStatus = true,
-            usePlaceholders = true,
-            completeUnimported = true,
           },
         },
       },
@@ -91,9 +84,22 @@ return {
     "stevearc/conform.nvim",
     opts = {
       formatters_by_ft = {
-        c = { "clang_format" },
-        cpp = { "clang_format" },
-        cmake = { "cmakelang" },
+        c = {
+          {
+            exe = "clang-format",
+            args = {
+              "-style={BasedOnStyle: Google, SortIncludes: false, IncludeBlocks: Preserve, IndentWidth: 4, TabWidth: 4, UseTab: Never}",
+            },
+          },
+        },
+        cpp = {
+          {
+            exe = "clang-format",
+            args = {
+              "-style={BasedOnStyle: Google, SortIncludes: false, IncludeBlocks: Preserve, IndentWidth: 4, TabWidth: 4, UseTab: Never}",
+            },
+          },
+        },
       },
     },
   },
@@ -102,10 +108,22 @@ return {
   {
     "mfussenegger/nvim-lint",
     opts = {
+      linters = {
+        cpplint = {
+          cmd = "cpplint",
+          args = {
+            "--filter=-legal/copyright,-whitespace/indent,-readability/inheritance",
+            "$FILENAME",
+          },
+          stdin = false,
+          stream = "stderr",
+          ignore_exitcode = true,
+          parser = require("lint.parser").from_errorformat("%f:%l: %m", { source = "cpplint" }),
+        },
+      },
       linters_by_ft = {
         c = { "cpplint" },
         cpp = { "cpplint" },
-        cmake = { "cmakelint" },
       },
     },
   },
