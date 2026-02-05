@@ -9,6 +9,14 @@ return {
           package_uninstalled = " ",
         },
       },
+      ensure_installed = {
+        "clangd",
+        "clang-format",
+        "codelldb",
+        "cpplint",
+        "cmakelang",
+        "cmakelint",
+      },
     },
   },
 }
