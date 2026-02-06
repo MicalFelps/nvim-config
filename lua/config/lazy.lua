@@ -14,12 +14,22 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
-local extras = require("config/lazy-extra")
-
 require("lazy").setup({
   spec = {
     { "LazyVim/LazyVim", import = "lazyvim.plugins" },
-    unpack(extras), -- spreads the extras table
+    { import = "lazyvim.plugins.extras.lang.clangd" },
+    { import = "lazyvim.plugins.extras.dap.core" },
+    { import = "lazyvim.plugins.extras.lang.cmake" },
+    { import = "lazyvim.plugins.extras.coding.mini-comment" },
+    { import = "lazyvim.plugins.extras.editor.inc-rename" },
+
+    { import = "lazyvim.plugins.extras.editor.leap" },
+    { import = "lazyvim.plugins.extras.editor.neo-tree" },
+    -- { import = "lazyvim.plugins.extras.ui.edgy" },
+    -- { import = "lazyvim.plugins.extras.util.project" },
+    -- { import = "lazyvim.plugins.extras.lang.json" },
+    -- { import = "lazyvim.plugins.extras.lang.markdown" },
+    -- { import = "lazyvim.plugins.extras.editor.mini-files" },
     { import = "plugins" },
   },
 
