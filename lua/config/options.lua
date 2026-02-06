@@ -60,8 +60,8 @@ vim.opt.confirm = true
 vim.opt.autoread = true
 
 -- Completion & Timing (LSP / cmp)
-vim.opt.updatetime = 250
-vim.opt.timeoutlen = 300
+vim.opt.updatetime = 0
+vim.opt.timeoutlen = 150
 
 vim.opt.completeopt = { "menu", "menuone", "noselect" }
 

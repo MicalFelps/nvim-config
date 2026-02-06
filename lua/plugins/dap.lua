@@ -1,6 +1,111 @@
 return {
+  {
+    "mfussenegger/nvim-dap",
+    lazy = true,
+    config = function()
+      local dap = require("dap")
 
-  -- 1. DAP UI – beautiful panels for variables, call stack, etc.
+      dap.adapters.codelldb = {
+        type = "executable",
+        command = vim.fn.stdpath("data") .. "/mason/packages/codelldb/extension/adapter/codelldb",
+        args = {}, -- stdio mode
+      }
+
+      --
+      -- 2️⃣TCP adapter
+      --
+      local tcp_port_user = nil -- user can override with :SetDAPPort
+      local tcp_port_default = 1234
+
+      -- Command to set the TCP port from Neovim
+      vim.api.nvim_create_user_command("SetDAPPort", function(opts)
+        tcp_port_user = tonumber(opts.args)
+        print("DAP TCP port set to", tcp_port_user)
+      end, { nargs = 1 })
+
+      -- Function to check if a port is free
+      local function is_port_free(port)
+        local ok, socket = pcall(require, "socket")
+        if not ok then
+          return false
+        end
+        local s = socket.bind("127.0.0.1", port)
+        if s then
+          s:close()
+          return true
+        end
+        return false
+      end
+
+      -- Function to pick which port to use
+      local function choose_tcp_port()
+        local port = tcp_port_user or tcp_port_default
+        if is_port_free(port) then
+          return port
+        end
+
+        -- fallback: pick a random free port
+        local ok, socket = pcall(require, "socket")
+        if ok then
+          local s = assert(socket.bind("127.0.0.1", 0))
+          local free_port = s:getsockname()[2]
+          s:close()
+          return free_port
+        end
+
+        return 4321
+      end
+
+      dap.adapters.codelldb_tcp = function(callback)
+        local port = choose_tcp_port()
+        callback({
+          type = "server",
+          host = "127.0.0.1",
+          port = port,
+          executable = {
+            command = vim.fn.stdpath("data") .. "/mason/packages/codelldb/extension/adapter/codelldb",
+            args = { "--port", tostring(port) },
+          },
+        })
+      end
+
+      --
+      --  Manual launch configs for C, C++, rust
+      --
+      for _, lang in ipairs({ "c", "cpp", "rust" }) do
+        dap.configurations[lang] = dap.configurations[lang] or {}
+
+        -- stdio launch
+        table.insert(dap.configurations[lang], {
+          type = "codelldb",
+          name = "codelldb - IO",
+          request = "launch",
+          program = function()
+            return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
+          end,
+          cwd = "${workspaceFolder}",
+          stopOnEntry = false,
+        })
+
+        -- TCP launch
+        table.insert(dap.configurations[lang], {
+          type = "codelldb_tcp",
+          name = "codelldb - TCP",
+          request = "launch",
+          program = function()
+            return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
+          end,
+          cwd = "${workspaceFolder}",
+          stopOnEntry = false,
+        })
+      end
+
+      -- Optional: for better logs when troubleshooting
+      -- dap.set_log_level("TRACE")
+    end,
+  },
+
+  -- Optional: DAP UI
   {
     "rcarriga/nvim-dap-ui",
     dependencies = {
@@ -23,7 +128,7 @@ return {
     end,
   },
 
-  -- 2. Inline virtual text (variable values next to code)
+  -- Optional: Virtual text
   {
     "theHamsta/nvim-dap-virtual-text",
     dependencies = {
@@ -42,70 +147,5 @@ return {
       clear_on_continue = false, -- avoid flicker during continue
       -- You can customize display_callback if needed
     },
-  },
-
-  -- 3. Bridge: install & auto-configure adapters via Mason
-  {
-    "jay-babu/mason-nvim-dap.nvim",
-    dependencies = {
-      "mason-org/mason.nvim",
-      "mfussenegger/nvim-dap",
-    },
-    opts = {
-      ensure_installed = { "codelldb" },
-      automatic_installation = true,
-      automatic_setup = true, -- ← this enables default_setup for everything in ensure_installed
-      handlers = {
-        function(config)
-          require("mason-nvim-dap").default_setup(config)
-        end,
-        -- If you ever need custom codelldb (usually NOT needed anymore):
-        -- codelldb = function(config)
-        --   config.adapters = {
-        --     type = "server",
-        --     port = "${port}",
-        --     host = "127.0.0.1",
-        --     executable = {
-        --       command = vim.fn.exepath("codelldb"),
-        --       args = { "--port", "${port}" },
-        --     },
-        --   }
-        --   require("mason-nvim-dap").default_setup(config)
-        -- end,
-      },
-    },
-  },
-
-  -- 4. Core nvim-dap + your custom configurations & keymaps
-  {
-    "mfussenegger/nvim-dap",
-    lazy = true,
-    config = function()
-      local dap = require("dap")
-
-      -- Optional: add your manual launch config (good fallback)
-      -- LazyVim extras (lang.clangd, lang.rust, etc.) often already provide similar/better ones
-      for _, lang in ipairs({ "c", "cpp", "rust" }) do
-        dap.configurations[lang] = dap.configurations[lang] or {}
-
-        -- Only append if you want your custom one alongside defaults
-        table.insert(dap.configurations[lang], {
-          type = "codelldb",
-          name = "Launch (manual input)",
-          request = "launch",
-          program = function()
-            return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
-          end,
-          cwd = "${workspaceFolder}",
-          stopOnEntry = false,
-          -- You can add more fields later:
-          -- args = {},
-          -- env = { SOME_VAR = "value" },
-        })
-      end
-
-      -- Optional: for better logs when troubleshooting
-      -- dap.set_log_level("TRACE")
-    end,
   },
 }
