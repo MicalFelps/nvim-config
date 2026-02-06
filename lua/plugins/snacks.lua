@@ -7,7 +7,6 @@ return {
       },
     },
     keys = {
-      -- Disable the default Snacks explorer keymaps (prevents it from opening)
       { "<leader>e", false },
       { "<leader>E", false },
       { "<leader>fe", false },
